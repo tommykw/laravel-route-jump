@@ -17,6 +17,7 @@ import com.intellij.psi.search.GlobalSearchScope
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.util.regex.Pattern
+import com.google.common.annotations.VisibleForTesting
 
 class LaravelRouteJumpAction : AnAction() {
     
@@ -246,11 +247,12 @@ class LaravelRouteJumpAction : AnAction() {
         }
     }
     
-    // Test helper methods
+    @VisibleForTesting
     internal fun extractPathFromUrlForTest(input: String): String {
         return extractPathFromUrl(input)
     }
     
+    @VisibleForTesting
     internal fun findMatchingRouteForTest(jsonOutput: String, url: String): String? {
         return findMatchingRoute(jsonOutput, url)
     }
