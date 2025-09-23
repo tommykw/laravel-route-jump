@@ -103,7 +103,7 @@ class LaravelRouteJumpAction : AnAction() {
     private fun findMatchingRoute(jsonOutput: String, url: String): String? {
         val path = extractPathFromUrl(url)
         val normalizedUrl = path.trim().removePrefix("/").removeSuffix("/")
-        val routeRegex = Regex("\\{[^}]*\"uri\"\\s*:\\s*\"([^\"]+)\"[^}]*\"action\"\\s*:\\s*\"([^\"]+)\"[^}]*\\}")
+        val routeRegex = """\{[^}]*"uri"\s*:\s*"([^"]+)"[^}]*"action"\s*:\s*"([^"]+)"[^}]*\}""".toRegex()
         val matches = routeRegex.findAll(jsonOutput)
         
         for (match in matches) {
@@ -121,10 +121,10 @@ class LaravelRouteJumpAction : AnAction() {
             
             if (normalizedRouteUri.contains("{")) {
                 val pattern = normalizedRouteUri
-                    .replace(Regex("\\{[^}]+\\?\\}"), "(/[^/]+)?")  // Replace {param?} with optional group including slash
-                    .replace(Regex("\\{[^}]+\\}"), "[^/]+")  // Replace {param} with [^/]+
+                    .replace("""\{[^}]+\?\}""".toRegex(), "(/[^/]+)?")  // Replace {param?} with optional group including slash
+                    .replace("""\{[^}]+\}""".toRegex(), "[^/]+")  // Replace {param} with [^/]+
                 
-                if (normalizedUrl.matches(Regex("^$pattern$"))) {
+                if (normalizedUrl.matches("^$pattern$".toRegex())) {
                     return action
                 }
             }
@@ -141,7 +141,7 @@ class LaravelRouteJumpAction : AnAction() {
                 val uri = java.net.URI(trimmed)
                 return uri.path ?: "/"
             } catch (e: Exception) {
-                val pathStart = trimmed.indexOf('/', 8) // Skip protocol part
+                val pathStart = trimmed.indexOf('/', 8)
                 return if (pathStart > 0) trimmed.substring(pathStart) else "/"
             }
         }
@@ -178,12 +178,10 @@ class LaravelRouteJumpAction : AnAction() {
         }
         
         val controllerFile = controllerFiles[0]
-        val psiFile = controllerFile
-        
         val fileEditorManager = FileEditorManager.getInstance(project)
-        val editors = fileEditorManager.openFile(psiFile.virtualFile, true)
+        val editors = fileEditorManager.openFile(controllerFile.virtualFile, true)
         
-        val methodOffset = findMethodInFile(psiFile, methodName)
+        val methodOffset = findMethodInFile(controllerFile, methodName)
         
         if (methodOffset != null && editors.isNotEmpty()) {
             val editor = editors[0]
