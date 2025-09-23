@@ -11,6 +11,7 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
+import com.intellij.psi.PsiManager
 import com.intellij.psi.search.FilenameIndex
 import com.intellij.psi.search.GlobalSearchScope
 import java.io.BufferedReader
@@ -145,10 +146,10 @@ class LaravelRouteJumpAction : AnAction() {
         // If it starts with http:// or https://, extract path
         if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
             try {
-                val url = java.net.URL(trimmed)
-                return url.path
+                val uri = java.net.URI(trimmed)
+                return uri.path ?: "/"
             } catch (e: Exception) {
-                // If URL parsing fails, try to extract path manually
+                // If URI parsing fails, try to extract path manually
                 val pathStart = trimmed.indexOf('/', 8) // Skip protocol part
                 return if (pathStart > 0) trimmed.substring(pathStart) else "/"
             }
@@ -174,11 +175,10 @@ class LaravelRouteJumpAction : AnAction() {
         val methodName = parts[1]
         
         // Find controller file
-        val controllerFiles = FilenameIndex.getFilesByName(
-            project,
+        val controllerFiles = FilenameIndex.getVirtualFilesByName(
             "$controllerName.php",
             GlobalSearchScope.projectScope(project)
-        )
+        ).mapNotNull { PsiManager.getInstance(project).findFile(it) }
         
         if (controllerFiles.isEmpty()) {
             Messages.showErrorDialog(
