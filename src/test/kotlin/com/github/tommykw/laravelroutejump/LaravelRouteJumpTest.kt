@@ -43,7 +43,6 @@ class LaravelRouteJumpTest : BasePlatformTestCase() {
         // For now, just test that it's not null - we'll debug the exact value
         assertNotNull("Result should not be null for 'about' route", result)
         // Print the result to see what we actually get
-        println("Actual result: '$result'")
         assertTrue("Result should contain 'about'", result?.contains("about") ?: false)
     }
 
