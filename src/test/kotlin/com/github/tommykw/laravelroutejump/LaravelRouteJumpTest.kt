@@ -77,16 +77,13 @@ class LaravelRouteJumpTest : BasePlatformTestCase() {
         
         // Test matching routes with parameters - focus on what works
         val result1 = action.findMatchingRouteForTest(jsonWithParams, "users/123")
-        println("Result for users/123: '$result1'")
         assertNotNull("Result should not be null for 'users/123'", result1)
         
         val result2 = action.findMatchingRouteForTest(jsonWithParams, "posts/456/comments/789")
-        println("Result for posts/456/comments/789: '$result2'")
         assertNotNull("Result should not be null for 'posts/456/comments/789'", result2)
         
         // Test URLs with query parameters matching parameterized routes
         val result3 = action.findMatchingRouteForTest(jsonWithParams, "http://localhost:8000/users/123?edit=true")
-        println("Result for URL with query: '$result3'")
         assertNotNull("Result should not be null for URL with query params", result3)
     }
 

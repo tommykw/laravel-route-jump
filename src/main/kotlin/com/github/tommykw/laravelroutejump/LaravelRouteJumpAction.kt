@@ -100,13 +100,8 @@ class LaravelRouteJumpAction : AnAction() {
     }
     
     private fun findMatchingRoute(jsonOutput: String, url: String): String? {
-        // Extract path from full URL or use as-is if it's already a path
         val path = extractPathFromUrl(url)
-        
-        // Normalize input path (remove leading/trailing slashes for comparison)
         val normalizedUrl = path.trim().removePrefix("/").removeSuffix("/")
-        
-        // Extract routes from JSON array format
         val routeRegex = Regex("\\{[^}]*\"uri\"\\s*:\\s*\"([^\"]+)\"[^}]*\"action\"\\s*:\\s*\"([^\"]+)\"[^}]*\\}")
         val matches = routeRegex.findAll(jsonOutput)
         
@@ -114,18 +109,15 @@ class LaravelRouteJumpAction : AnAction() {
             val routeUri = match.groupValues[1]
             val action = match.groupValues[2]
             
-            // Normalize route URI (remove leading/trailing slashes, handle escapes)
             val normalizedRouteUri = routeUri
                 .replace("\\/", "/")  // Unescape forward slashes
                 .removePrefix("/")
                 .removeSuffix("/")
             
-            // Check for exact match first
             if (normalizedUrl == normalizedRouteUri) {
                 return action
             }
             
-            // If route has parameters, create regex pattern
             if (normalizedRouteUri.contains("{")) {
                 val pattern = normalizedRouteUri
                     .replace(Regex("\\{[^}]+\\?\\}"), "(/[^/]+)?")  // Replace {param?} with optional group including slash
@@ -143,24 +135,20 @@ class LaravelRouteJumpAction : AnAction() {
     private fun extractPathFromUrl(input: String): String {
         val trimmed = input.trim()
         
-        // If it starts with http:// or https://, extract path
         if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
             try {
                 val uri = java.net.URI(trimmed)
                 return uri.path ?: "/"
             } catch (e: Exception) {
-                // If URI parsing fails, try to extract path manually
                 val pathStart = trimmed.indexOf('/', 8) // Skip protocol part
                 return if (pathStart > 0) trimmed.substring(pathStart) else "/"
             }
         }
         
-        // If it's already a path (starts with /), return as-is
         return trimmed
     }
     
     private fun jumpToControllerMethod(project: Project, controllerAction: String) {
-        // Parse Controller@method format
         val parts = controllerAction.split("@")
         if (parts.size != 2) {
             Messages.showErrorDialog(
@@ -174,7 +162,6 @@ class LaravelRouteJumpAction : AnAction() {
         val controllerName = parts[0].substringAfterLast("\\")
         val methodName = parts[1]
         
-        // Find controller file
         val controllerFiles = FilenameIndex.getVirtualFilesByName(
             "$controllerName.php",
             GlobalSearchScope.projectScope(project)
@@ -192,11 +179,9 @@ class LaravelRouteJumpAction : AnAction() {
         val controllerFile = controllerFiles[0]
         val psiFile = controllerFile
         
-        // Open the file
         val fileEditorManager = FileEditorManager.getInstance(project)
         val editors = fileEditorManager.openFile(psiFile.virtualFile, true)
         
-        // Find and navigate to the method offset
         val methodOffset = findMethodInFile(psiFile, methodName)
         
         if (methodOffset != null && editors.isNotEmpty()) {
@@ -220,13 +205,11 @@ class LaravelRouteJumpAction : AnAction() {
     }
     
     private fun findMethodInFile(psiFile: com.intellij.psi.PsiFile, methodName: String): Int? {
-        // Simple text search for method
         val text = psiFile.text
         val pattern = Pattern.compile("function\\s+($methodName)\\s*\\(")
         val matcher = pattern.matcher(text)
         
         if (matcher.find()) {
-            // Return the start position of the method name (group 1), not the whole match
             return matcher.start(1)
         }
         
