@@ -6,10 +6,22 @@
 
     <depends>com.intellij.modules.platform</depends>
 
-    <resource-bundle>messages.MyBundle</resource-bundle>
-
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="com.github.tommykw.laravelroutejump.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
-        <postStartupActivity implementation="com.github.tommykw.laravelroutejump.startup.MyProjectActivity" />
+        <projectConfigurable 
+            parentId="tools" 
+            instance="com.github.tommykw.laravelroutejump.LaravelRouteJumpConfigurable" 
+            id="LaravelRouteJump" 
+            displayName="Laravel Route Jump"/>
     </extensions>
+
+    <actions>
+        <action id="com.github.tommykw.laravelroutejump.LaravelRouteJumpAction"
+                class="com.github.tommykw.laravelroutejump.LaravelRouteJumpAction"
+                text="Laravel Route Jump"
+                description="Jump from Laravel URL to Controller method">
+            <keyboard-shortcut keymap="$default" first-keystroke="ctrl shift J"/>
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+        </action>
+    </actions>
 </idea-plugin>
