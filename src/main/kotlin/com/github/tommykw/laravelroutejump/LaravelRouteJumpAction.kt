@@ -51,20 +51,41 @@ class LaravelRouteJumpAction : AnAction() {
                     }
                     
                     indicator.text = "Running artisan route:list..."
-                    
+
+                    val projectDir = java.io.File(project.basePath ?: "")
+                    if (!projectDir.exists()) {
+                        ApplicationManager.getApplication().invokeLater {
+                            Messages.showErrorDialog(
+                                project,
+                                "Project directory not found: ${projectDir.absolutePath}",
+                                "Directory Error"
+                            )
+                        }
+                        return
+                    }
+
                     val processBuilder = ProcessBuilder()
-                    processBuilder.directory(java.io.File(project.basePath ?: ""))
+                    processBuilder.directory(projectDir)
                     processBuilder.command(artisanCommand.split(" ") + listOf("route:list", "--json"))
-                    
+
                     val process = processBuilder.start()
                     val reader = BufferedReader(InputStreamReader(process.inputStream))
+                    val errorReader = BufferedReader(InputStreamReader(process.errorStream))
                     val output = reader.readText()
-                    
+                    val errorOutput = errorReader.readText()
+
                     val exitCode = process.waitFor()
-                    
+
                     if (exitCode != 0) {
                         ApplicationManager.getApplication().invokeLater {
-                            showCommandFailedDialog(project)
+                            Messages.showErrorDialog(
+                                project,
+                                "Command failed with exit code $exitCode\n" +
+                                "Command: ${artisanCommand.split(" ") + listOf("route:list", "--json")}\n" +
+                                "Working directory: ${projectDir.absolutePath}\n" +
+                                "Error output: $errorOutput",
+                                "Command Failed"
+                            )
                         }
                         return
                     }
@@ -89,11 +110,16 @@ class LaravelRouteJumpAction : AnAction() {
                     
                 } catch (e: Exception) {
                     ApplicationManager.getApplication().invokeLater {
-                        Messages.showErrorDialog(
-                            project,
-                            "Error occurred: ${e.message}",
-                            "Error"
-                        )
+                        if (e.message?.contains("Cannot run program \"php\"") == true ||
+                            e.message?.contains("No such file or directory") == true) {
+                            showPhpNotFoundDialog(project)
+                        } else {
+                            Messages.showErrorDialog(
+                                project,
+                                "Error occurred: ${e.message}",
+                                "Error"
+                            )
+                        }
                     }
                 }
             }
@@ -239,7 +265,22 @@ class LaravelRouteJumpAction : AnAction() {
             "Cancel",
             Messages.getErrorIcon()
         )
-        
+
+        if (result == Messages.YES) {
+            ShowSettingsUtil.getInstance().showSettingsDialog(project, LaravelRouteJumpConfigurable::class.java)
+        }
+    }
+
+    private fun showPhpNotFoundDialog(project: Project) {
+        val result = Messages.showYesNoDialog(
+            project,
+            "PHP command not found. Please configure the full path to PHP.\nExample: '/path/to/php artisan'",
+            "PHP Not Found",
+            "Open Settings",
+            "Cancel",
+            Messages.getErrorIcon()
+        )
+
         if (result == Messages.YES) {
             ShowSettingsUtil.getInstance().showSettingsDialog(project, LaravelRouteJumpConfigurable::class.java)
         }
