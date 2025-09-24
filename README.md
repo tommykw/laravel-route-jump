@@ -2,6 +2,14 @@
 
 <!-- Plugin description -->
 Jump from a Laravel URL to the corresponding Controller@method in PhpStorm or IntelliJ IDEA.
+
+Key capabilities:
+- Instant navigation from URLs to controller methods
+- Support for both full URLs and path-only formats
+- Handles parameterized routes (e.g., /users/{id})
+- Works with local PHP and containerized Docker environments
+- Integrates seamlessly with PhpStorm's navigation system
+- Saves significant development time by eliminating manual route searching
 <!-- Plugin description end -->
 
 ## Features
@@ -36,7 +44,7 @@ Before using the plugin, configure the Artisan command:
 
 1. Go to **Settings** > **Tools** > **Laravel Route Jump**
 2. Set the appropriate Artisan command for your environment:
-   - **Local PHP**: `php artisan`
+   - **Local PHP**: `/path/to/php artisan`
    - **Docker**: `docker compose exec app php artisan`
    - **Custom**: Any command that runs `artisan route:list --json`
 
