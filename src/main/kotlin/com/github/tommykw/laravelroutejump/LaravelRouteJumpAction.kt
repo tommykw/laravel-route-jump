@@ -161,17 +161,18 @@ class LaravelRouteJumpAction : AnAction() {
     
     private fun extractPathFromUrl(input: String): String {
         val trimmed = input.trim()
-        
+
         if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
             try {
                 val uri = java.net.URI(trimmed)
                 return uri.path ?: "/"
             } catch (e: Exception) {
-                val pathStart = trimmed.indexOf('/', 8)
+                val protocolEnd = if (trimmed.startsWith("https://")) 8 else 7
+                val pathStart = trimmed.indexOf('/', protocolEnd)
                 return if (pathStart > 0) trimmed.substring(pathStart) else "/"
             }
         }
-        
+
         return trimmed
     }
     

@@ -74,14 +74,27 @@ class LaravelRouteJumpTest : BasePlatformTestCase() {
         assertNotNull("Result should not be null for URL with query params", result3)
     }
 
+    fun testSubdomainUrlExtraction() {
+        val action = LaravelRouteJumpAction()
+
+        assertEquals("/users/123", action.extractPathFromUrlForTest("https://api.example.com/users/123"))
+        assertEquals("/admin/dashboard", action.extractPathFromUrlForTest("https://admin.example.com/admin/dashboard"))
+        assertEquals("/products", action.extractPathFromUrlForTest("http://shop.localhost:8000/products"))
+        assertEquals("/", action.extractPathFromUrlForTest("https://subdomain.example.com/"))
+        assertEquals("/api/v1/users", action.extractPathFromUrlForTest("https://api.staging.example.com/api/v1/users"))
+
+        assertEquals("/contact", action.extractPathFromUrlForTest("https://api.example.com/contact?name=test"))
+        assertEquals("/users/123", action.extractPathFromUrlForTest("https://admin.example.com/users/123#details"))
+    }
+
     fun testConfigurable() {
         val configurable = LaravelRouteJumpConfigurable(project)
-        
+
         assertEquals("Laravel Route Jump", configurable.displayName)
-        
+
         val component = configurable.createComponent()
         assertNotNull(component)
-        
+
         assertFalse(configurable.isModified)
     }
 }
