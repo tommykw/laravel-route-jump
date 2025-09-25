@@ -173,6 +173,14 @@ class LaravelRouteJumpAction : AnAction() {
             }
         }
 
+        val firstSlashIndex = trimmed.indexOf('/')
+        if (firstSlashIndex > 0) {
+            val beforeSlash = trimmed.substring(0, firstSlashIndex)
+            if (beforeSlash.contains('.') || beforeSlash.contains('{')) {
+                return trimmed.substring(firstSlashIndex)
+            }
+        }
+
         return trimmed
     }
     
