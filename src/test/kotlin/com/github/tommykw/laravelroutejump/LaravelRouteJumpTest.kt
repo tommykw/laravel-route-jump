@@ -85,6 +85,9 @@ class LaravelRouteJumpTest : BasePlatformTestCase() {
 
         assertEquals("/contact", action.extractPathFromUrlForTest("https://api.example.com/contact?name=test"))
         assertEquals("/users/123", action.extractPathFromUrlForTest("https://admin.example.com/users/123#details"))
+
+        assertEquals("/shop/123", action.extractPathFromUrlForTest("{account}.localhost/shop/123"))
+        assertEquals("/api/users", action.extractPathFromUrlForTest("api.example.com/api/users"))
     }
 
     fun testConfigurable() {
