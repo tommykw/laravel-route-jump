@@ -1,52 +1,64 @@
-# laravel-route-jump
-
-![Build](https://github.com/tommykw/laravel-route-jump/workflows/Build/badge.svg)
-[![Version](https://img.shields.io/jetbrains/plugin/v/MARKETPLACE_ID.svg)](https://plugins.jetbrains.com/plugin/MARKETPLACE_ID)
-[![Downloads](https://img.shields.io/jetbrains/plugin/d/MARKETPLACE_ID.svg)](https://plugins.jetbrains.com/plugin/MARKETPLACE_ID)
-
-## Template ToDo list
-- [x] Create a new [IntelliJ Platform Plugin Template][template] project.
-- [ ] Get familiar with the [template documentation][template].
-- [ ] Adjust the [pluginGroup](./gradle.properties) and [pluginName](./gradle.properties), as well as the [id](./src/main/resources/META-INF/plugin.xml) and [sources package](./src/main/kotlin).
-- [ ] Adjust the plugin description in `README` (see [Tips][docs:plugin-description])
-- [ ] Review the [Legal Agreements](https://plugins.jetbrains.com/docs/marketplace/legal-agreements.html?from=IJPluginTemplate).
-- [ ] [Publish a plugin manually](https://plugins.jetbrains.com/docs/intellij/publishing-plugin.html?from=IJPluginTemplate) for the first time.
-- [ ] Set the `MARKETPLACE_ID` in the above README badges. You can obtain it once the plugin is published to JetBrains Marketplace.
-- [ ] Set the [Plugin Signing](https://plugins.jetbrains.com/docs/intellij/plugin-signing.html?from=IJPluginTemplate) related [secrets](https://github.com/JetBrains/intellij-platform-plugin-template#environment-variables).
-- [ ] Set the [Deployment Token](https://plugins.jetbrains.com/docs/marketplace/plugin-upload.html?from=IJPluginTemplate).
-- [ ] Click the <kbd>Watch</kbd> button on the top of the [IntelliJ Platform Plugin Template][template] to be notified about releases containing new features and fixes.
-- [ ] Configure the [CODECOV_TOKEN](https://docs.codecov.com/docs/quick-start) secret for automated test coverage reports on PRs
+# Laravel Route Jump IntelliJ Plugin
 
 <!-- Plugin description -->
-This Fancy IntelliJ Platform Plugin is going to be your implementation of the brilliant ideas that you have.
+Jump from a Laravel URL to the corresponding Controller@method in PhpStorm or IntelliJ IDEA.
 
-This specific section is a source for the [plugin.xml](/src/main/resources/META-INF/plugin.xml) file which will be extracted by the [Gradle](/build.gradle.kts) during the build process.
-
-To keep everything working, do not remove `<!-- ... -->` sections. 
+Key capabilities:
+- Instant navigation from URLs to controller methods
+- Support for both full URLs and path-only formats
+- Handles parameterized routes (e.g., /users/{id})
+- Works with local PHP and containerized Docker environments
+- Integrates seamlessly with PhpStorm's navigation system
+- Saves significant development time by eliminating manual route searching
 <!-- Plugin description end -->
+
+## Features
+
+- 🚀 **Quick Navigation**: Jump directly from URLs to Controller methods
+- 🌐 **Full URL Support**: Accepts both full URLs (`http://localhost:8000/users/123`) and paths (`/users/123`)
+- 🔧 **Flexible Configuration**: Supports local PHP and Docker environments
+- ⚡ **Keyboard Shortcut**: `Ctrl+Shift+J` (or `Cmd+Shift+J` on Mac)
+- 📱 **Parameter Routes**: Handles dynamic routes with parameters like `/users/{id}`
+- 🎯 **Precise Navigation**: Cursor lands on the method name, not just the function keyword
 
 ## Installation
 
-- Using the IDE built-in plugin system:
-  
-  <kbd>Settings/Preferences</kbd> > <kbd>Plugins</kbd> > <kbd>Marketplace</kbd> > <kbd>Search for "laravel-route-jump"</kbd> >
-  <kbd>Install</kbd>
-  
-- Using JetBrains Marketplace:
+1. Clone this repository:
+   ```bash
+   git clone https://github.com/yourusername/laravel-route-jump.git
+   cd laravel-route-jump
+   ```
 
-  Go to [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/MARKETPLACE_ID) and install it by clicking the <kbd>Install to ...</kbd> button in case your IDE is running.
+2. Build the plugin:
+   ```bash
+   ./gradlew buildPlugin
+   ```
 
-  You can also download the [latest release](https://plugins.jetbrains.com/plugin/MARKETPLACE_ID/versions) from JetBrains Marketplace and install it manually using
-  <kbd>Settings/Preferences</kbd> > <kbd>Plugins</kbd> > <kbd>⚙️</kbd> > <kbd>Install plugin from disk...</kbd>
+3. Install in PhpStorm/IntelliJ:
+   - Go to **Settings** > **Plugins** > **Install Plugin from Disk**
+   - Select the zip file from `build/distributions/`
 
-- Manually:
+## Configuration
 
-  Download the [latest release](https://github.com/tommykw/laravel-route-jump/releases/latest) and install it manually using
-  <kbd>Settings/Preferences</kbd> > <kbd>Plugins</kbd> > <kbd>⚙️</kbd> > <kbd>Install plugin from disk...</kbd>
+Before using the plugin, configure the Artisan command:
 
+1. Go to **Settings** > **Tools** > **Laravel Route Jump**
+2. Set the appropriate Artisan command for your environment:
+   - **Local PHP**: `/path/to/php artisan`
+   - **Docker**: `docker compose exec app php artisan`
+   - **Custom**: Any command that runs `artisan route:list --json`
 
----
-Plugin based on the [IntelliJ Platform Plugin Template][template].
+## Usage
 
-[template]: https://github.com/JetBrains/intellij-platform-plugin-template
-[docs:plugin-description]: https://plugins.jetbrains.com/docs/intellij/plugin-user-experience.html#plugin-description-and-presentation
+1. Press `Ctrl+Shift+J` (or `Cmd+Shift+J` on Mac)
+2. Enter a Laravel URL in any of these formats:
+   - Full URL: `http://localhost:8000/users/123`
+   - URL with query params: `http://localhost:8000/users/123?page=2`
+   - Path only: `/users/123`
+   - Simple path: `users/123`
+3. Hit Enter and jump directly to the controller method!
+
+## Requirements
+
+- Laravel project with Artisan CLI
+- PHP or Docker environment configured
