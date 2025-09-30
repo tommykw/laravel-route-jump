@@ -131,31 +131,33 @@ class LaravelRouteJumpAction : AnAction() {
         val normalizedUrl = path.trim().removePrefix("/").removeSuffix("/")
         val routeRegex = """\{[^}]*"uri"\s*:\s*"([^"]+)"[^}]*"action"\s*:\s*"([^"]+)"[^}]*\}""".toRegex()
         val matches = routeRegex.findAll(jsonOutput)
-        
+
         for (match in matches) {
             val routeUri = match.groupValues[1]
             val action = match.groupValues[2]
-            
-            val normalizedRouteUri = routeUri
+
+            // Extract path from route URI (handles subdomain routes)
+            val routePath = extractPathFromUrl(routeUri)
+            val normalizedRouteUri = routePath
                 .replace("\\/", "/")  // Unescape forward slashes
                 .removePrefix("/")
                 .removeSuffix("/")
-            
+
             if (normalizedUrl == normalizedRouteUri) {
                 return action
             }
-            
+
             if (normalizedRouteUri.contains("{")) {
                 val pattern = normalizedRouteUri
                     .replace("""\{[^}]+\?\}""".toRegex(), "(/[^/]+)?")  // Replace {param?} with optional group including slash
                     .replace("""\{[^}]+\}""".toRegex(), "[^/]+")  // Replace {param} with [^/]+
-                
+
                 if (normalizedUrl.matches("^$pattern$".toRegex())) {
                     return action
                 }
             }
         }
-        
+
         return null
     }
     
@@ -173,10 +175,12 @@ class LaravelRouteJumpAction : AnAction() {
             }
         }
 
+        // Handle subdomain patterns like {account}.localhost/path or example.com/path
         val firstSlashIndex = trimmed.indexOf('/')
         if (firstSlashIndex > 0) {
             val beforeSlash = trimmed.substring(0, firstSlashIndex)
-            if (beforeSlash.contains('.') || beforeSlash.contains('{')) {
+            // If it looks like a domain (contains . or {}), extract path
+            if (beforeSlash.contains('.') || beforeSlash.contains('{') || beforeSlash.contains('}')) {
                 return trimmed.substring(firstSlashIndex)
             }
         }
