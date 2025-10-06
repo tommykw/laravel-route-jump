@@ -90,6 +90,37 @@ class LaravelRouteJumpTest : BasePlatformTestCase() {
         assertEquals("/api/users", action.extractPathFromUrlForTest("api.example.com/api/users"))
     }
 
+    fun testSubdomainRouteMatching() {
+        val action = LaravelRouteJumpAction()
+
+        val jsonWithSubdomainRoutes = """[
+            {"uri":"{account}.localhost/terms/shop-member","action":"Shop\\\\TermsController@termShopMemberView"},
+            {"uri":"{account}.localhost/terms/shop-not-member","action":"Shop\\\\TermsController@termShopNotMember"},
+            {"uri":"{account}.localhost/terms/taxi/{taxi}","action":"Shop\\\\TermsController@termTaxiView"},
+            {"uri":"{account}.localhost/terms/user","action":"Shop\\\\TermsController@termUserView"}
+        ]"""
+
+        val result1 = action.findMatchingRouteForTest(jsonWithSubdomainRoutes, "{account}.localhost/terms/shop-member")
+        assertNotNull("Should match {account}.localhost/terms/shop-member", result1)
+        assertTrue("Should contain termShopMemberView", result1?.contains("termShopMemberView") ?: false)
+
+        val result2 = action.findMatchingRouteForTest(jsonWithSubdomainRoutes, "test-account.localhost/terms/shop-member")
+        assertNotNull("Should match subdomain route with actual account value", result2)
+        assertTrue("Should contain termShopMemberView", result2?.contains("termShopMemberView") ?: false)
+
+        val result3 = action.findMatchingRouteForTest(jsonWithSubdomainRoutes, "myaccount.localhost/terms/taxi/123")
+        assertNotNull("Should match subdomain route with parameter", result3)
+        assertTrue("Should contain termTaxiView", result3?.contains("termTaxiView") ?: false)
+
+        val result4 = action.findMatchingRouteForTest(jsonWithSubdomainRoutes, "/terms/shop-member")
+        assertNotNull("Should match by path only", result4)
+        assertTrue("Should contain termShopMemberView", result4?.contains("termShopMemberView") ?: false)
+
+        val result5 = action.findMatchingRouteForTest(jsonWithSubdomainRoutes, "terms/user")
+        assertNotNull("Should match relative path", result5)
+        assertTrue("Should contain termUserView", result5?.contains("termUserView") ?: false)
+    }
+
     fun testConfigurable() {
         val configurable = LaravelRouteJumpConfigurable(project)
 

@@ -131,31 +131,47 @@ class LaravelRouteJumpAction : AnAction() {
         val normalizedUrl = path.trim().removePrefix("/").removeSuffix("/")
         val routeRegex = """\{[^}]*"uri"\s*:\s*"([^"]+)"[^}]*"action"\s*:\s*"([^"]+)"[^}]*\}""".toRegex()
         val matches = routeRegex.findAll(jsonOutput)
-        
+
         for (match in matches) {
             val routeUri = match.groupValues[1]
             val action = match.groupValues[2]
-            
-            val normalizedRouteUri = routeUri
+
+            // Extract path from route URI (handles subdomain routes)
+            val routePath = extractPathFromUrl(routeUri)
+            val normalizedRouteUri = routePath
                 .replace("\\/", "/")  // Unescape forward slashes
                 .removePrefix("/")
                 .removeSuffix("/")
-            
+
+            // Exact match without parameters
             if (normalizedUrl == normalizedRouteUri) {
                 return action
             }
-            
+
+            // Pattern matching for routes with parameters
             if (normalizedRouteUri.contains("{")) {
                 val pattern = normalizedRouteUri
-                    .replace("""\{[^}]+\?\}""".toRegex(), "(/[^/]+)?")  // Replace {param?} with optional group including slash
+                    .replace("""\{[^}]+\?\}""".toRegex(), "(/[^/]+)?")  // Replace {param?} with optional group
                     .replace("""\{[^}]+\}""".toRegex(), "[^/]+")  // Replace {param} with [^/]+
-                
+
                 if (normalizedUrl.matches("^$pattern$".toRegex())) {
                     return action
                 }
             }
+
+            // Also try matching the full route URI (including subdomain) as a pattern
+            // This handles cases where user inputs the full route like {account}.localhost/path
+            val fullRoutePattern = routeUri
+                .replace("\\/", "/")  // Unescape forward slashes
+                .replace("""\{[^}]+\?\}""".toRegex(), "([^/]+)?")  // Replace {param?} with optional group
+                .replace("""\{[^}]+\}""".toRegex(), "[^/.]+")  // Replace {param} with [^/.]+
+
+            val normalizedInput = url.trim().removePrefix("/").removeSuffix("/")
+            if (normalizedInput.matches("^$fullRoutePattern$".toRegex())) {
+                return action
+            }
         }
-        
+
         return null
     }
     
@@ -173,15 +189,27 @@ class LaravelRouteJumpAction : AnAction() {
             }
         }
 
+        // Handle subdomain patterns like {account}.localhost/path or example.com/path
         val firstSlashIndex = trimmed.indexOf('/')
         if (firstSlashIndex > 0) {
             val beforeSlash = trimmed.substring(0, firstSlashIndex)
-            if (beforeSlash.contains('.') || beforeSlash.contains('{')) {
+            // If it looks like a domain (contains . or {}), extract path
+            if (beforeSlash.contains('.') || beforeSlash.contains('{') || beforeSlash.contains('}')) {
                 return trimmed.substring(firstSlashIndex)
             }
         }
 
-        return trimmed
+        // Handle query parameters and anchors for plain paths
+        val queryIndex = trimmed.indexOf('?')
+        val anchorIndex = trimmed.indexOf('#')
+        val endIndex = when {
+            queryIndex > 0 && anchorIndex > 0 -> minOf(queryIndex, anchorIndex)
+            queryIndex > 0 -> queryIndex
+            anchorIndex > 0 -> anchorIndex
+            else -> trimmed.length
+        }
+
+        return trimmed.substring(0, endIndex)
     }
     
     private fun jumpToControllerMethod(project: Project, controllerAction: String) {
