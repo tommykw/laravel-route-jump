@@ -150,12 +150,17 @@ class LaravelRouteJumpAction : AnAction() {
 
             // Pattern matching for routes with parameters
             if (normalizedRouteUri.contains("{")) {
-                val pattern = normalizedRouteUri
-                    .replace("""\{[^}]+\?\}""".toRegex(), "(/[^/]+)?")  // Replace {param?} with optional group
-                    .replace("""\{[^}]+\}""".toRegex(), "[^/]+")  // Replace {param} with [^/]+
+                try {
+                    val pattern = normalizedRouteUri
+                        .replace("""\{[^}]+\?\}""".toRegex(), "(/[^/]+)?")  // Replace {param?} with optional group
+                        .replace("""\{[^}]+\}""".toRegex(), "[^/]+")  // Replace {param} with [^/]+
+                        .let { Regex.escape(it).replace("\\[\\^/\\]\\+", "[^/]+").replace("\\(/\\[\\^/\\]\\+\\)\\?", "(/[^/]+)?") }  // Escape remaining special chars
 
-                if (normalizedUrl.matches("^$pattern$".toRegex())) {
-                    return action
+                    if (normalizedUrl.matches("^$pattern$".toRegex())) {
+                        return action
+                    }
+                } catch (e: Exception) {
+                    // Skip invalid regex patterns
                 }
             }
 
