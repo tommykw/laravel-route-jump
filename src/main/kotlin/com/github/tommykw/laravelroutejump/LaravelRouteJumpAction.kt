@@ -143,18 +143,32 @@ class LaravelRouteJumpAction : AnAction() {
                 .removePrefix("/")
                 .removeSuffix("/")
 
+            // Exact match without parameters
             if (normalizedUrl == normalizedRouteUri) {
                 return action
             }
 
+            // Pattern matching for routes with parameters
             if (normalizedRouteUri.contains("{")) {
                 val pattern = normalizedRouteUri
-                    .replace("""\{[^}]+\?\}""".toRegex(), "(/[^/]+)?")  // Replace {param?} with optional group including slash
+                    .replace("""\{[^}]+\?\}""".toRegex(), "(/[^/]+)?")  // Replace {param?} with optional group
                     .replace("""\{[^}]+\}""".toRegex(), "[^/]+")  // Replace {param} with [^/]+
 
                 if (normalizedUrl.matches("^$pattern$".toRegex())) {
                     return action
                 }
+            }
+
+            // Also try matching the full route URI (including subdomain) as a pattern
+            // This handles cases where user inputs the full route like {account}.localhost/path
+            val fullRoutePattern = routeUri
+                .replace("\\/", "/")  // Unescape forward slashes
+                .replace("""\{[^}]+\?\}""".toRegex(), "([^/]+)?")  // Replace {param?} with optional group
+                .replace("""\{[^}]+\}""".toRegex(), "[^/.]+")  // Replace {param} with [^/.]+
+
+            val normalizedInput = url.trim().removePrefix("/").removeSuffix("/")
+            if (normalizedInput.matches("^$fullRoutePattern$".toRegex())) {
+                return action
             }
         }
 
@@ -185,7 +199,17 @@ class LaravelRouteJumpAction : AnAction() {
             }
         }
 
-        return trimmed
+        // Handle query parameters and anchors for plain paths
+        val queryIndex = trimmed.indexOf('?')
+        val anchorIndex = trimmed.indexOf('#')
+        val endIndex = when {
+            queryIndex > 0 && anchorIndex > 0 -> minOf(queryIndex, anchorIndex)
+            queryIndex > 0 -> queryIndex
+            anchorIndex > 0 -> anchorIndex
+            else -> trimmed.length
+        }
+
+        return trimmed.substring(0, endIndex)
     }
     
     private fun jumpToControllerMethod(project: Project, controllerAction: String) {
