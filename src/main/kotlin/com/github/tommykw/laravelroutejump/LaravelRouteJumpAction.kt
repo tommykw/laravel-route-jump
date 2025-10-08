@@ -151,10 +151,16 @@ class LaravelRouteJumpAction : AnAction() {
             // Pattern matching for routes with parameters
             if (normalizedRouteUri.contains("{")) {
                 try {
+                    // Use placeholders to protect regex patterns during escaping
+                    val placeholder1 = "___OPTIONAL_PARAM___"
+                    val placeholder2 = "___REQUIRED_PARAM___"
+
                     val pattern = normalizedRouteUri
-                        .replace("""\{[^}]+\?\}""".toRegex(), "(/[^/]+)?")  // Replace {param?} with optional group
-                        .replace("""\{[^}]+\}""".toRegex(), "[^/]+")  // Replace {param} with [^/]+
-                        .let { Regex.escape(it).replace("\\[\\^/\\]\\+", "[^/]+").replace("\\(/\\[\\^/\\]\\+\\)\\?", "(/[^/]+)?") }  // Escape remaining special chars
+                        .replace("""\{[^}]+\?\}""".toRegex(), placeholder1)  // Replace {param?} with placeholder
+                        .replace("""\{[^}]+\}""".toRegex(), placeholder2)  // Replace {param} with placeholder
+                        .let { Regex.escape(it) }  // Escape any remaining special chars (including unclosed braces)
+                        .replace(placeholder1, "(/[^/]+)?")  // Restore optional param pattern
+                        .replace(placeholder2, "[^/]+")  // Restore required param pattern
 
                     if (normalizedUrl.matches("^$pattern$".toRegex())) {
                         return action
