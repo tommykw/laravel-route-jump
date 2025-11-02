@@ -129,12 +129,28 @@ class LaravelRouteJumpAction : AnAction() {
     private fun findMatchingRoute(jsonOutput: String, url: String): String? {
         val path = extractPathFromUrl(url)
         val normalizedUrl = path.trim().removePrefix("/").removeSuffix("/")
-        val routeRegex = """\{[^}]*"uri"\s*:\s*"([^"]+)"[^}]*"action"\s*:\s*"([^"]+)"[^}]*\}""".toRegex()
-        val matches = routeRegex.findAll(jsonOutput)
 
-        for (match in matches) {
-            val routeUri = match.groupValues[1]
-            val action = match.groupValues[2]
+        // Parse JSON routes - extract all route objects
+        val routeObjectRegex = """\{[^{}]*\}""".toRegex()
+        val routeObjects = routeObjectRegex.findAll(jsonOutput)
+
+        for (routeMatch in routeObjects) {
+            val routeJson = routeMatch.value
+
+            // Extract domain (can be "value" or null)
+            val domainRegex = """"domain"\s*:\s*(?:"([^"]*)"|null)""".toRegex()
+            val domainMatch = domainRegex.find(routeJson)
+            val domain = domainMatch?.groupValues?.getOrNull(1) ?: ""
+
+            // Extract uri
+            val uriRegex = """"uri"\s*:\s*"([^"]+)"""".toRegex()
+            val uriMatch = uriRegex.find(routeJson) ?: continue
+            val routeUri = uriMatch.groupValues[1]
+
+            // Extract action
+            val actionRegex = """"action"\s*:\s*"([^"]+)"""".toRegex()
+            val actionMatch = actionRegex.find(routeJson) ?: continue
+            val action = actionMatch.groupValues[1]
 
             // Extract path from route URI (handles subdomain routes)
             val routePath = extractPathFromUrl(routeUri)
@@ -160,6 +176,32 @@ class LaravelRouteJumpAction : AnAction() {
                     }
                 } catch (e: Exception) {
                     // Skip routes with invalid regex patterns (e.g., unclosed braces)
+                }
+            }
+
+            // Handle routes with domain constraints
+            // If domain is set (not null or empty), match against full URL including domain
+            if (!domain.isNullOrEmpty()) {
+                try {
+                    // Build full route pattern: domain/uri
+                    val fullRoute = "$domain/$routeUri"
+                        .replace("\\/", "/")  // Unescape forward slashes
+                        .replace("""\{[^}]+\?\}""".toRegex(), "([^/]+)?")  // Replace {param?} with optional group
+                        .replace("""\{[^}]+\}""".toRegex(), "[^/.]+")  // Replace {param} with [^/.]+
+
+                    // Try to match with full URL (e.g., "develop.localhost/manage/login")
+                    val trimmedUrl = url.trim()
+                    val urlWithoutProtocol = trimmedUrl
+                        .removePrefix("http://")
+                        .removePrefix("https://")
+                        .removePrefix("/")
+                        .removeSuffix("/")
+
+                    if (urlWithoutProtocol.matches("^$fullRoute$".toRegex())) {
+                        return action
+                    }
+                } catch (e: Exception) {
+                    // Skip routes with invalid regex patterns
                 }
             }
 

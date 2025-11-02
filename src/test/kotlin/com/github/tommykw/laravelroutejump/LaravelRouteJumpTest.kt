@@ -131,4 +131,21 @@ class LaravelRouteJumpTest : BasePlatformTestCase() {
 
         assertFalse(configurable.isModified)
     }
+
+    fun testUrlWithPortNumber() {
+        val action = LaravelRouteJumpAction()
+
+        // Simulate Laravel route:list --json output with null domain
+        val jsonOutput = """[{"method":["GET","HEAD"],"uri":"hello","name":null,"action":"App\\Http\\Controllers\\HelloController@index","middleware":[],"domain":null}]"""
+
+        val result1 = action.findMatchingRouteForTest(jsonOutput, "http://localhost:5173/hello")
+        assertNotNull("Should match route for http://localhost:5173/hello", result1)
+        assertTrue("Should contain HelloController", result1?.contains("HelloController") ?: false)
+
+        val result2 = action.findMatchingRouteForTest(jsonOutput, "hello")
+        assertNotNull("Should match route for 'hello'", result2)
+
+        val result3 = action.findMatchingRouteForTest(jsonOutput, "/hello")
+        assertNotNull("Should match route for '/hello'", result3)
+    }
 }
