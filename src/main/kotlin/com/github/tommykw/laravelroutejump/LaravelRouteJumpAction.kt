@@ -126,17 +126,53 @@ class LaravelRouteJumpAction : AnAction() {
         })
     }
     
+    private fun extractJsonObjects(jsonString: String): List<String> {
+        val objects = mutableListOf<String>()
+        var depth = 0
+        var startIndex = -1
+        var inString = false
+        var escapeNext = false
+
+        for (i in jsonString.indices) {
+            val char = jsonString[i]
+
+            if (escapeNext) {
+                escapeNext = false
+                continue
+            }
+
+            when (char) {
+                '\\' -> escapeNext = true
+                '"' -> if (!escapeNext) inString = !inString
+                '{' -> {
+                    if (!inString) {
+                        if (depth == 0) startIndex = i
+                        depth++
+                    }
+                }
+                '}' -> {
+                    if (!inString) {
+                        depth--
+                        if (depth == 0 && startIndex >= 0) {
+                            objects.add(jsonString.substring(startIndex, i + 1))
+                            startIndex = -1
+                        }
+                    }
+                }
+            }
+        }
+
+        return objects
+    }
+
     private fun findMatchingRoute(jsonOutput: String, url: String): String? {
         val path = extractPathFromUrl(url)
         val normalizedUrl = path.trim().removePrefix("/").removeSuffix("/")
 
-        // Parse JSON routes - extract all route objects
-        val routeObjectRegex = """\{[^{}]*\}""".toRegex()
-        val routeObjects = routeObjectRegex.findAll(jsonOutput)
+        // Parse JSON routes - extract all route objects by finding balanced braces
+        val routeObjects = extractJsonObjects(jsonOutput)
 
-        for (routeMatch in routeObjects) {
-            val routeJson = routeMatch.value
-
+        for (routeJson in routeObjects) {
             // Extract domain (can be "value" or null)
             val domainRegex = """"domain"\s*:\s*(?:"([^"]*)"|null)""".toRegex()
             val domainMatch = domainRegex.find(routeJson)
