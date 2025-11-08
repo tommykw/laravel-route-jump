@@ -12,6 +12,9 @@ Key capabilities:
 - Saves significant development time by eliminating manual route searching
 <!-- Plugin description end -->
 
+## Demo
+![Laravel Route Jump Demo](docs/demo.gif)
+
 ## Features
 
 - 🚀 **Quick Navigation**: Jump directly from URLs to Controller methods
