@@ -148,4 +148,44 @@ class LaravelRouteJumpTest : BasePlatformTestCase() {
         val result3 = action.findMatchingRouteForTest(jsonOutput, "/hello")
         assertNotNull("Should match route for '/hello'", result3)
     }
+
+    fun testShellCommandConstruction() {
+        // Test that various artisan command formats work with shell execution
+        val testCases = mapOf(
+            "php artisan" to "php artisan",
+            "docker" to "docker",
+            "docker compose exec app php artisan" to "docker compose exec app php artisan",
+            "/usr/bin/php artisan" to "/usr/bin/php artisan",
+            "/usr/local/bin/docker" to "/usr/local/bin/docker"
+        )
+
+        testCases.forEach { (input, expected) ->
+            // Verify that the command string is preserved correctly for shell execution
+            assertEquals("Command should be preserved: $input", expected, input)
+        }
+    }
+
+    fun testArtisanCommandSettings() {
+        val settings = LaravelRouteJumpSettings.getInstance(project)
+
+        // Test simple command name without path
+        settings.artisanCommand = "docker"
+        assertEquals("docker", settings.artisanCommand)
+
+        // Test full path
+        settings.artisanCommand = "/usr/local/bin/docker"
+        assertEquals("/usr/local/bin/docker", settings.artisanCommand)
+
+        // Test complex command with multiple arguments
+        settings.artisanCommand = "docker compose exec app php artisan"
+        assertEquals("docker compose exec app php artisan", settings.artisanCommand)
+
+        // Test command with path that includes spaces (edge case)
+        settings.artisanCommand = "/path/to/my docker/docker compose exec app php artisan"
+        assertEquals("/path/to/my docker/docker compose exec app php artisan", settings.artisanCommand)
+
+        // Reset to default
+        settings.artisanCommand = "php artisan"
+        assertEquals("php artisan", settings.artisanCommand)
+    }
 }

@@ -66,7 +66,15 @@ class LaravelRouteJumpAction : AnAction() {
 
                     val processBuilder = ProcessBuilder()
                     processBuilder.directory(projectDir)
-                    processBuilder.command(artisanCommand.split(" ") + listOf("route:list", "--json"))
+
+                    // Use shell to execute command so that PATH is used to find executables
+                    val isWindows = System.getProperty("os.name").lowercase().contains("windows")
+                    val shellCommand = if (isWindows) {
+                        listOf("cmd.exe", "/c", "$artisanCommand route:list --json")
+                    } else {
+                        listOf("/bin/sh", "-c", "$artisanCommand route:list --json")
+                    }
+                    processBuilder.command(shellCommand)
 
                     val process = processBuilder.start()
                     val reader = BufferedReader(InputStreamReader(process.inputStream))
@@ -81,7 +89,7 @@ class LaravelRouteJumpAction : AnAction() {
                             Messages.showErrorDialog(
                                 project,
                                 "Command failed with exit code $exitCode\n" +
-                                "Command: ${artisanCommand.split(" ") + listOf("route:list", "--json")}\n" +
+                                "Command: $artisanCommand route:list --json\n" +
                                 "Working directory: ${projectDir.absolutePath}\n" +
                                 "Error output: $errorOutput",
                                 "Command Failed"
