@@ -80,11 +80,15 @@ jobs:
   test:
     name: Test
     needs: [ build ]
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
     steps:
 
-      # Free GitHub Actions Environment Disk Space
+      # Free GitHub Actions Environment Disk Space (Linux only)
       - name: Maximize Build Space
+        if: runner.os == 'Linux'
         uses: jlumbroso/free-disk-space@v1.3.1
         with:
           tool-cache: false
@@ -116,11 +120,12 @@ jobs:
         if: ${{ failure() }}
         uses: actions/upload-artifact@v5
         with:
-          name: tests-result
+          name: tests-result-${{ matrix.os }}
           path: ${{ github.workspace }}/build/reports/tests
 
-      # Upload the Kover report to CodeCov
+      # Upload the Kover report to CodeCov (Linux only to avoid duplicate reports)
       - name: Upload Code Coverage Report
+        if: runner.os == 'Linux'
         uses: codecov/codecov-action@v5
         with:
           files: ${{ github.workspace }}/build/reports/kover/report.xml
