@@ -18,6 +18,15 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.util.regex.Pattern
 import com.google.common.annotations.VisibleForTesting
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+
+@Serializable
+data class Route(
+    val domain: String? = null,
+    val uri: String,
+    val action: String,
+)
 
 class LaravelRouteJumpAction : AnAction() {
     
@@ -126,67 +135,21 @@ class LaravelRouteJumpAction : AnAction() {
         })
     }
     
-    private fun extractJsonObjects(jsonString: String): List<String> {
-        val objects = mutableListOf<String>()
-        var depth = 0
-        var startIndex = -1
-        var inString = false
-        var escapeNext = false
-
-        for (i in jsonString.indices) {
-            val char = jsonString[i]
-
-            if (escapeNext) {
-                escapeNext = false
-                continue
-            }
-
-            when (char) {
-                '\\' -> escapeNext = true
-                '"' -> if (!escapeNext) inString = !inString
-                '{' -> {
-                    if (!inString) {
-                        if (depth == 0) startIndex = i
-                        depth++
-                    }
-                }
-                '}' -> {
-                    if (!inString) {
-                        depth--
-                        if (depth == 0 && startIndex >= 0) {
-                            objects.add(jsonString.substring(startIndex, i + 1))
-                            startIndex = -1
-                        }
-                    }
-                }
-            }
-        }
-
-        return objects
-    }
-
     private fun findMatchingRoute(jsonOutput: String, url: String): String? {
         val path = extractPathFromUrl(url)
         val normalizedUrl = path.trim().removePrefix("/").removeSuffix("/")
 
-        // Parse JSON routes - extract all route objects by finding balanced braces
-        val routeObjects = extractJsonObjects(jsonOutput)
+        val json = Json { ignoreUnknownKeys = true }
+        val routes = try {
+            json.decodeFromString<List<Route>>(jsonOutput)
+        } catch (e: Exception) {
+            return null
+        }
 
-        for (routeJson in routeObjects) {
-            // Extract domain (can be "value" or null)
-            val domainRegex = """"domain"\s*:\s*(?:"([^"]*)"|null)""".toRegex()
-            val domainMatch = domainRegex.find(routeJson)
-            val domain = domainMatch?.groupValues?.getOrNull(1) ?: ""
-
-            // Extract uri
-            val uriRegex = """"uri"\s*:\s*"([^"]+)"""".toRegex()
-            val uriMatch = uriRegex.find(routeJson) ?: continue
-            val routeUri = uriMatch.groupValues[1]
-
-            // Extract action
-            val actionRegex = """"action"\s*:\s*"([^"]+)"""".toRegex()
-            val actionMatch = actionRegex.find(routeJson) ?: continue
-            val action = actionMatch.groupValues[1]
+        for (route in routes) {
+            val routeUri = route.uri
+            val action = route.action
+            val domain = route.domain
 
             // Extract path from route URI (handles subdomain routes)
             val routePath = extractPathFromUrl(routeUri)
