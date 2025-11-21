@@ -26,23 +26,6 @@ Key capabilities:
 - 📱 **Parameter Routes**: Handles dynamic routes with parameters like `/users/{id}`
 - 🎯 **Precise Navigation**: Cursor lands on the method name, not just the function keyword
 
-## Installation
-
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/yourusername/laravel-route-jump.git
-   cd laravel-route-jump
-   ```
-
-2. Build the plugin:
-   ```bash
-   ./gradlew buildPlugin
-   ```
-
-3. Install in PhpStorm/IntelliJ:
-   - Go to **Settings** > **Plugins** > **Install Plugin from Disk**
-   - Select the zip file from `build/distributions/`
-
 ## Configuration
 
 Before using the plugin, configure the Artisan command:
