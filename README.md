@@ -1,6 +1,7 @@
 # Laravel Route Jump IntelliJ Plugin
 
 [![JetBrains Plugin](https://img.shields.io/jetbrains/plugin/v/29069-laravel-route-jump.svg)](https://plugins.jetbrains.com/plugin/29069-laravel-route-jump)
+[![Downloads](https://img.shields.io/jetbrains/plugin/d/29069-laravel-route-jump.svg)](https://plugins.jetbrains.com/plugin/29069-laravel-route-jump)
 
 <!-- Plugin description -->
 Jump from a Laravel URL to the corresponding Controller@method in PhpStorm or IntelliJ IDEA.
