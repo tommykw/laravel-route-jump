@@ -1,6 +1,7 @@
 # Laravel Route Jump IntelliJ Plugin
 
 [![JetBrains Plugin](https://img.shields.io/jetbrains/plugin/v/29069-laravel-route-jump.svg)](https://plugins.jetbrains.com/plugin/29069-laravel-route-jump)
+[![Downloads](https://img.shields.io/jetbrains/plugin/d/29069-laravel-route-jump.svg)](https://plugins.jetbrains.com/plugin/29069-laravel-route-jump)
 
 <!-- Plugin description -->
 Jump from a Laravel URL to the corresponding Controller@method in PhpStorm or IntelliJ IDEA.
@@ -33,12 +34,12 @@ Before using the plugin, configure the Artisan command:
 1. Go to **Settings** > **Tools** > **Laravel Route Jump**
 2. Set the appropriate Artisan command for your environment:
    - **Local PHP**: `/path/to/php artisan`
-   - **Docker**: `docker compose exec app php artisan`
+   - **Docker**: `/path/to/docker compose exec app php artisan`
    - **Custom**: Any command that runs `artisan route:list --json`
 
 ## Usage
 
-1. Press `Ctrl+Shift+J` (or `Cmd+Shift+J` on Mac)
+1. Press `Ctrl+Shift+J` (or `Cmd+Shift+J` on Mac), or go to **Tools** > **Laravel Route Jump**
 2. Enter a Laravel URL in any of these formats:
    - Full URL: `http://localhost:8000/users/123`
    - URL with query params: `http://localhost:8000/users/123?page=2`
