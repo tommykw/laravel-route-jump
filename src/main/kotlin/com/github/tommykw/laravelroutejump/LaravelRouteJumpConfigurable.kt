@@ -19,7 +19,7 @@ class LaravelRouteJumpConfigurable(private val project: Project) : Configurable 
                 row("Artisan Command:") {
                     textField()
                         .bindText(settings::artisanCommand)
-                        .comment("Full path to PHP may be required. Examples: '/path/to/php artisan', 'docker compose exec app php artisan'")
+                        .comment("Full path to PHP may be required. Examples: '/path/to/php artisan', '/path/to/docker compose exec app php artisan'")
                         .resizableColumn()
                         .align(AlignX.FILL)
                 }
