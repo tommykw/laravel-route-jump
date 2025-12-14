@@ -95,14 +95,24 @@ class LaravelRouteJumpAction : AnAction() {
 
                     if (exitCode != 0) {
                         ApplicationManager.getApplication().invokeLater {
-                            Messages.showErrorDialog(
+                            val result = Messages.showYesNoDialog(
                                 project,
-                                "Command failed with exit code $exitCode\n" +
-                                "Command: $artisanCommand route:list --json\n" +
-                                "Working directory: ${projectDir.absolutePath}\n" +
-                                "Error output: $errorOutput",
-                                "Command Failed"
+                                """
+                                    Command: $artisanCommand route:list --json
+                                    Working directory: ${projectDir.absolutePath}
+                                    Error output: $errorOutput
+
+                                    The artisan command path might be incorrect. Please check your configuration.
+                                """.trimIndent(),
+                                "Command failed with exit code $exitCode",
+                                "Open Settings",
+                                "Cancel",
+                                Messages.getErrorIcon(),
                             )
+
+                            if (result == Messages.YES) {
+                                ShowSettingsUtil.getInstance().showSettingsDialog(project, LaravelRouteJumpConfigurable::class.java)
+                            }
                         }
                         return
                     }
