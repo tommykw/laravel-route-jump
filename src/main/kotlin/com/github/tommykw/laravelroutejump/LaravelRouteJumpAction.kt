@@ -20,12 +20,21 @@ import java.util.regex.Pattern
 import com.google.common.annotations.VisibleForTesting
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonPrimitive
 
 @Serializable
 data class Route(
     val domain: String? = null,
     val uri: String,
     val action: String,
+    val method: JsonElement? = null,
+)
+
+data class RouteMatch(
+    val action: String,
+    val methods: List<String>,
 )
 
 class LaravelRouteJumpAction : AnAction() {
@@ -119,11 +128,29 @@ class LaravelRouteJumpAction : AnAction() {
                     
                     indicator.text = "Parsing routes..."
 
-                    val controllerAction = findMatchingRoute(output, url)
-                    
-                    if (controllerAction != null) {
+                    val routeMatches = findMatchingRoutes(output, url)
+
+                    if (routeMatches.isNotEmpty()) {
+                        val methodToAction = linkedMapOf<String, String>()
+                        for (match in routeMatches.filter { isNavigableAction(it.action) }) {
+                            for (method in match.methods) {
+                                methodToAction.putIfAbsent(method, match.action)
+                            }
+                        }
+
                         ApplicationManager.getApplication().invokeLater {
-                            jumpToControllerMethod(project, controllerAction)
+                            if (methodToAction.isEmpty()) {
+                                Messages.showInfoMessage(
+                                    project,
+                                    "Matching route uses a Closure and cannot be navigated:\n$url",
+                                    "Route Not Navigable"
+                                )
+                            } else if (methodToAction.size <= 1) {
+                                val controllerAction = methodToAction.values.first()
+                                jumpToControllerMethod(project, controllerAction)
+                            } else {
+                                showMethodSelectionDialog(project, url, methodToAction)
+                            }
                         }
                     } else {
                         ApplicationManager.getApplication().invokeLater {
@@ -153,7 +180,7 @@ class LaravelRouteJumpAction : AnAction() {
         })
     }
     
-    private fun findMatchingRoute(jsonOutput: String, url: String): String? {
+    private fun findMatchingRoutes(jsonOutput: String, url: String): List<RouteMatch> {
         val path = extractPathFromUrl(url)
         val normalizedUrl = path.trim().removePrefix("/").removeSuffix("/")
 
@@ -161,13 +188,15 @@ class LaravelRouteJumpAction : AnAction() {
         val routes = try {
             json.decodeFromString<List<Route>>(jsonOutput)
         } catch (e: Exception) {
-            return null
+            return emptyList()
         }
 
+        val matches = mutableListOf<RouteMatch>()
         for (route in routes) {
             val routeUri = route.uri
             val action = route.action
             val domain = route.domain
+            val routeMethods = normalizeMethods(route.method)
 
             // Extract path from route URI (handles subdomain routes)
             val routePath = extractPathFromUrl(routeUri)
@@ -178,7 +207,8 @@ class LaravelRouteJumpAction : AnAction() {
 
             // Exact match without parameters
             if (normalizedUrl == normalizedRouteUri) {
-                return action
+                matches.add(RouteMatch(action, routeMethods))
+                continue
             }
 
             // Pattern matching for routes with parameters
@@ -189,7 +219,8 @@ class LaravelRouteJumpAction : AnAction() {
                         .replace("""\{[^}]+\}""".toRegex(), "[^/]+")  // Replace {param} with [^/]+
 
                     if (normalizedUrl.matches("^$pattern$".toRegex())) {
-                        return action
+                        matches.add(RouteMatch(action, routeMethods))
+                        continue
                     }
                 } catch (e: Exception) {
                     // Skip routes with invalid regex patterns (e.g., unclosed braces)
@@ -215,7 +246,8 @@ class LaravelRouteJumpAction : AnAction() {
                         .removeSuffix("/")
 
                     if (urlWithoutProtocol.matches("^$fullRoute$".toRegex())) {
-                        return action
+                        matches.add(RouteMatch(action, routeMethods))
+                        continue
                     }
                 } catch (e: Exception) {
                     // Skip routes with invalid regex patterns
@@ -231,11 +263,57 @@ class LaravelRouteJumpAction : AnAction() {
 
             val normalizedInput = url.trim().removePrefix("/").removeSuffix("/")
             if (normalizedInput.matches("^$fullRoutePattern$".toRegex())) {
-                return action
+                matches.add(RouteMatch(action, routeMethods))
+                continue
             }
         }
 
-        return null
+        return matches
+    }
+
+    private fun normalizeMethods(methodsElement: JsonElement?): List<String> {
+        val rawMethods = when (methodsElement) {
+            is JsonArray -> methodsElement.mapNotNull { (it as? JsonPrimitive)?.content?.takeIf { value -> value != "null" } }
+            is JsonPrimitive -> listOf(methodsElement.content).filter { it != "null" }
+            else -> emptyList()
+        }
+
+        val normalized = rawMethods
+            .flatMap { it.split("|") }
+            .map { it.trim().uppercase() }
+            .filter { it.isNotEmpty() }
+        if (normalized.isEmpty()) {
+            return listOf("GET")
+        }
+        val withoutHead = normalized.filterNot { it == "HEAD" }
+        return if (withoutHead.isEmpty()) normalized else withoutHead
+    }
+
+    private fun showMethodSelectionDialog(
+        project: Project,
+        url: String,
+        methodToAction: LinkedHashMap<String, String>,
+    ) {
+        val methods = methodToAction.keys.toList()
+        val options = (methods + "Cancel").toTypedArray()
+        val result = Messages.showDialog(
+            project,
+            "Multiple HTTP methods found for:\n$url\nSelect a method:",
+            "Select HTTP Method",
+            options,
+            0,
+            Messages.getQuestionIcon()
+        )
+
+        if (result in methods.indices) {
+            val selectedMethod = methods[result]
+            val controllerAction = methodToAction[selectedMethod] ?: return
+            jumpToControllerMethod(project, controllerAction)
+        }
+    }
+
+    private fun isNavigableAction(action: String): Boolean {
+        return action.contains("@")
     }
     
     private fun extractPathFromUrl(input: String): String {
@@ -393,6 +471,11 @@ class LaravelRouteJumpAction : AnAction() {
     
     @VisibleForTesting
     internal fun findMatchingRouteForTest(jsonOutput: String, url: String): String? {
-        return findMatchingRoute(jsonOutput, url)
+        return findMatchingRoutes(jsonOutput, url).firstOrNull()?.action
+    }
+
+    @VisibleForTesting
+    internal fun findMatchingRoutesForTest(jsonOutput: String, url: String): List<RouteMatch> {
+        return findMatchingRoutes(jsonOutput, url)
     }
 }

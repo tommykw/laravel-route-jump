@@ -149,6 +149,56 @@ class LaravelRouteJumpTest : BasePlatformTestCase() {
         assertNotNull("Should match route for '/hello'", result3)
     }
 
+    fun testFindMatchingRoutesWithMethods() {
+        val action = LaravelRouteJumpAction()
+
+        val jsonOutput = """[
+            {"method":["GET","HEAD","POST"],"uri":"hello","action":"App\\Http\\Controllers\\HelloController@index","domain":null}
+        ]"""
+
+        val results = action.findMatchingRoutesForTest(jsonOutput, "hello")
+        assertEquals(1, results.size)
+        assertEquals(listOf("GET", "POST"), results[0].methods)
+    }
+
+    fun testFindMatchingRoutesWithMethodString() {
+        val action = LaravelRouteJumpAction()
+
+        val jsonOutput = """[
+            {"method":"GET|HEAD","uri":"sample","action":"App\\Http\\Controllers\\SampleController@index","domain":null}
+        ]"""
+
+        val results = action.findMatchingRoutesForTest(jsonOutput, "/sample")
+        assertEquals(1, results.size)
+        assertEquals(listOf("GET"), results[0].methods)
+    }
+
+    fun testFindMatchingRoutesWithMultipleMethods() {
+        val action = LaravelRouteJumpAction()
+
+        val jsonOutput = """[
+            {"method":["POST"],"uri":"hello","action":"App\\Http\\Controllers\\HelloController@store","domain":null},
+            {"method":["DELETE"],"uri":"hello","action":"App\\Http\\Controllers\\HelloController@destroy","domain":null}
+        ]"""
+
+        val results = action.findMatchingRoutesForTest(jsonOutput, "hello")
+        assertEquals(2, results.size)
+        assertEquals(setOf("POST", "DELETE"), results.flatMap { it.methods }.toSet())
+    }
+
+    fun testFindMatchingRoutesWithClosureAction() {
+        val action = LaravelRouteJumpAction()
+
+        val jsonOutput = """[
+            {"method":["GET","HEAD"],"uri":"/","action":"Closure","domain":null}
+        ]"""
+
+        val results = action.findMatchingRoutesForTest(jsonOutput, "/")
+        assertEquals(1, results.size)
+        assertEquals("Closure", results[0].action)
+        assertEquals(listOf("GET"), results[0].methods)
+    }
+
     fun testShellCommandConstruction() {
         // Test that various artisan command formats work with shell execution
         val testCases = mapOf(
