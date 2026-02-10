@@ -285,8 +285,8 @@ class LaravelRouteJumpAction : AnAction() {
         if (normalized.isEmpty()) {
             return listOf("GET")
         }
-        val withoutHead = normalized.filterNot { it == "HEAD" }
-        return if (withoutHead.isEmpty()) normalized else withoutHead
+        val filtered = normalized.filterNot { it == "HEAD" || it == "OPTIONS" }
+        return if (filtered.isEmpty()) normalized else filtered
     }
 
     private fun showMethodSelectionDialog(

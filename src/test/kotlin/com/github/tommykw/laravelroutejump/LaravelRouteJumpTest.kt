@@ -173,6 +173,18 @@ class LaravelRouteJumpTest : BasePlatformTestCase() {
         assertEquals(listOf("GET"), results[0].methods)
     }
 
+    fun testFindMatchingRoutesFiltersOptionsMethod() {
+        val action = LaravelRouteJumpAction()
+
+        val jsonOutput = """[
+            {"method":["GET","HEAD","OPTIONS"],"uri":"sample","action":"App\\Http\\Controllers\\SampleController@index","domain":null}
+        ]"""
+
+        val results = action.findMatchingRoutesForTest(jsonOutput, "/sample")
+        assertEquals(1, results.size)
+        assertEquals(listOf("GET"), results[0].methods)
+    }
+
     fun testFindMatchingRoutesWithMultipleMethods() {
         val action = LaravelRouteJumpAction()
 
