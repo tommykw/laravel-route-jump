@@ -126,7 +126,7 @@ jobs:
       # Upload the Kover report to CodeCov (Linux only to avoid duplicate reports)
       - name: Upload Code Coverage Report
         if: runner.os == 'Linux'
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           files: ${{ github.workspace }}/build/reports/kover/report.xml
           token: ${{ secrets.CODECOV_TOKEN }}
